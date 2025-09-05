@@ -37,4 +37,9 @@ int setjmp(jmp_buf __buf);
 
 _Noreturn void longjmp(jmp_buf __buf, int __ret);
 
+// POSIX
+typedef jmp_buf sigjmp_buf;
+int sigsetjmp(sigjmp_buf, int);
+_Noreturn void siglongjmp(sigjmp_buf, int);
+
 #endif

@@ -1,6 +1,7 @@
 ; The MIT License (MIT)
 ;
 ; Copyright (c) 2023-2024 Fraser Heavy Software
+; Copyright (c) 2025 Haelwenn (lanodan) Monnier
 ;
 ; Permission is hereby granted, free of charge, to any person obtaining a copy
 ; of this software and associated documentation files (the "Software"), to deal
@@ -78,6 +79,62 @@
     jnz r0 &__longjmp_ret
     mov r0 1
 :__longjmp_ret
+
+    ; jump
+    mov rip r9
+
+
+
+; ==========================================================
+; int sigsetjmp(sigjmp_buf env, int savemask);
+; ==========================================================
+; The POSIX sigsetjmp() function.
+;
+; Defined as equivalent to setjmp, except it preserves the
+; calling thread signal mask when savemask is non-zero
+;
+; ==========================================================
+
+=sigsetjmp
+    ; store the first three callee-preserved registers as-is
+    stw rsp r0 0
+    stw rfp r0 4
+    stw rpp r0 8
+
+    ; the value we want to preserve for rip is the return value at rsp
+    ldw r9 rsp 0
+    stw r9 r0 12
+
+    ; return 0
+    zero r0
+    ret
+
+
+
+; ==========================================================
+; [[noreturn]] void siglongjmp(int registers[4], int return_value);
+; ==========================================================
+; The POSIX siglongjmp() function.
+;
+; We restore the callee-preserved registers stored with sigsetjmp(),
+; returning from sigsetjmp() again with the given return value.
+; ==========================================================
+
+=siglongjmp
+    ; restore the first three callee-preserved registers
+    ldw rsp r0 0
+    ldw rfp r0 4
+    ldw rpp r0 8
+
+    ; the fourth value is the instruction pointer
+    ldw r9 r0 12
+
+    ; place the given return value in r0.
+    ; if it's zero, we are supposed to coerce it to 1.
+    mov r0 r1
+    jnz r0 &__siglongjmp_ret
+    mov r0 1
+:__siglongjmp_ret
 
     ; jump
     mov rip r9
